@@ -56,8 +56,6 @@ void input_update(f64 delta_time) {
     //move our current states to our previous states
     mem_copy(&state.keyboard_previous, &state.keyboard_current, sizeof(keyboard_state));
     mem_copy(&state.mouse_previous, &state.mouse_current, sizeof(mouse_state));
-
-
 }
 
 void input_process_key(keys key, b8 pressed) {

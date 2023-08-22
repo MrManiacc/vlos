@@ -105,3 +105,4 @@ f64 platform_get_time();
  * @param ms  The number of milliseconds to sleep
  */
 void platform_sleep(u64 ms);
+

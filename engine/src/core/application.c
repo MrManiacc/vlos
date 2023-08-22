@@ -1,10 +1,12 @@
 #include "types.h"
 #include "application.h"
 #include "platform/platform.h"
-#include "logger.h"
+#include "core/logger.h"
 #include "core/mem.h"
 #include "core/event.h"
-#include "input.h"
+#include "core/input.h"
+#include "core/clock.h"
+#include "renderer/renderer_frontend.h"
 
 /**
  * Internally initializes the platform state and returns it. This is per platform and should be called
@@ -17,6 +19,7 @@ typedef struct application_state {
     platform_state platform; //< The platform state
     i16 width; //< The width of the surface
     i16 height; //< The height of the surface
+    clock clock; //< The clock for the application. internally tracks the elapsed time
     f64 last_time; //< The last time the application was updated
 } application_state;
 
@@ -37,24 +40,24 @@ b8 application_on_key(u16 code, ptr sender, ptr listener_inst, event_context con
  */
 b8 application_create(app_host *host) {
     if (initialized) {
-        verror("Application already initialized")
+        vfatal("Application already initialized")
         return false;
     }
     if (!host) {
-        verror("Application host is null")
+        vfatal("Application host is null")
         return false;
     }
     state.host = host;
     //Initialize our subsystems
     if (!logger_initialize()) {
-        verror("Failed to initialize the logger")
+        vfatal("Failed to initialize the logger")
         return false;
     }
     state.running = true;
     state.suspended = false;
 
     if (!event_initialize()) {
-        verror("Event system failed initialization. Application cannot continue.");
+        vfatal("Event system failed initialization. Application cannot continue.");
         return false;
     }
     event_register(SYSTEM_EVENT_CODE_QUIT, 0, application_on_event);
@@ -66,12 +69,18 @@ b8 application_create(app_host *host) {
                           host->config.y,
                           host->config.width,
                           host->config.height)) {
-        verror("Failed to initialize the platform")
+        vfatal("Failed to initialize the platform")
         return false;
     }
 
+    if (!renderer_initialize(host->config.title, &state.platform)) {
+        vfatal("Failed to initialize the renderer")
+        return false;
+    }
+
+
     if (!input_initialize()) {
-        verror("Failed to initialize the input system")
+        vfatal("Failed to initialize the input system")
         return false;
     }
 
@@ -93,13 +102,25 @@ b8 application_run() {
         verror("Application not initialized")
         return false;
     }
+    clock_start(&state.clock);
+    clock_update(&state.clock);
+    state.last_time = state.clock.elapsed_time;
+    f64 running_time = 0;
+    u8 frame_count = 0;
+    f64 frame_target = 1.0 / 60.0;
     vinfo(mem_usage_str())
     while (state.running) {
-        platform_pump_messages(&state.platform);
+        if (!platform_pump_messages(&state.platform)) {
+            vfatal("Failed to pump platform messages")
+            state.running = false;
+            break;
+        }
         if (!state.suspended) {
-            f64 current_time = platform_get_time();
+            clock_update(&state.clock);
+            f64 current_time = state.clock.elapsed_time;
             f64 delta_time = current_time - state.last_time;
-            state.last_time = current_time;
+            f64 frame_start_time = platform_get_time();
+
             // Update and render the application
             if (!state.host->update(state.host, (f32) delta_time) ||
                 !state.host->render(state.host, (f32) delta_time)) {
@@ -107,9 +128,32 @@ b8 application_run() {
                 state.running = false;
                 break;
             }
+
+            render_packet packet;
+            packet.delta_time = (f32) delta_time;
+            renderer_draw_frame(&packet);
+
+            f64 frame_end_time = platform_get_time();
+            f64 frame_time = frame_end_time - frame_start_time;
+            running_time += frame_time;
+            f64 remaining_time = frame_target - frame_time;
+
+
+            if (remaining_time > 0) {
+                u64 remaining_ms = (remaining_time * 1000);
+                b8 limit_frames = false;
+                //TODO: This is a hack to limit the frames to 60. This should be done in a better way
+                if (remaining_ms > 0 && limit_frames) {
+                    platform_sleep(remaining_ms - 1);
+                }
+                frame_count++;
+            }
+
             // Update our input state. Input state handling should always be done after
             // Any input has been recorded.
             input_update(delta_time);
+
+            state.last_time = current_time;
         }
     }
     vwarn("Shutting down the application")
@@ -119,6 +163,7 @@ b8 application_run() {
     event_unregister(SYSTEM_EVENT_CODE_KEY_RELEASE, application_on_key);
     event_shutdown(); //shutdown the event subsystem
     input_shutdown(); //shutdown the input subsystem
+    renderer_shutdown(); //shutdown the renderer
     platform_shutdown(&state.platform); //shutdown the platform
     // Shutdown logger last just in case we need to log anything during shutdown
     logger_shutdown();

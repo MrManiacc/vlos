@@ -72,6 +72,7 @@ void mem_shutdown() {
         for (u32 i = 0; i < MEM_TAG_FLAGGED; ++i) {
             if (stats.tagged_allocations[i] != 0) {
                 verror("Memory leak detected for tag %u. Total memory allocated: %llu", i, stats.tagged_allocations[i]);
+
             }
         }
     }

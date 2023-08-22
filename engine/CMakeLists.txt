@@ -16,7 +16,7 @@ else()
 endif()
 
 # Glob's are evil, but this is a small project
-file(GLOB_RECURSE SOURCES "*.c" "*.h")
+file(GLOB_RECURSE SOURCES "*.c" "*.h" "*.inl")
 
 add_library(engine SHARED ${SOURCES})
 set_target_properties(engine PROPERTIES LINKER_LANGUAGE C)
@@ -40,3 +40,4 @@ target_link_libraries(engine
         ${Vulkan_LIBRARIES}
 )
 
+target_compile_definitions(engine PUBLIC -DDEBUG_BUILD)

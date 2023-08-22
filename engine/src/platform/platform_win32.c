@@ -10,6 +10,9 @@
 #include "core/input.h"
 #include <windows.h>
 #include <windowsx.h>
+#include "renderer/vulkan/vulkan_platform.h"
+#include "containers/darray.h"
+#include "defines.h"
 
 static f64 clock_frequency;
 static LARGE_INTEGER start_time;
@@ -163,6 +166,11 @@ f64 platform_get_time() {
 void platform_sleep(u64 ms) {
     Sleep(ms);
 }
+
+void platform_required_extensions(const char ***names_darray) {
+    darray_push(*names_darray, &"VK_KHR_win32_surface");
+}
+
 
 LRESULT CALLBACK win32_process_message(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {

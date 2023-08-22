@@ -27,9 +27,9 @@ typedef enum log_level {
   LOG_LEVEL_TRACE = 5,
 } log_level;
 
-VAPI b8 initialize_logger();
+VAPI b8 logger_initialize();
 
-VAPI void shutdown_logger();
+VAPI void logger_shutdown();
 
 VAPI void log_output(log_level level, const char *file, i32 line, const char *format, ...);
 

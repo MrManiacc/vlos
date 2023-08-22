@@ -133,7 +133,7 @@ void *platform_set_memory(void *dest, i32 value, u64 size) {
 void platform_console_write(conststr str, u8 color) {
   HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
   //FATAL, ERROR, WARN, INFO, DEBUG, TRACE
-  static u8 levels[6] = {132, 140, 142, 143, 139, 141};
+  static u8 levels[7] = {132, 140, 142, 143, 139, 141, 0};
   SetConsoleTextAttribute(hConsole, levels[color]);
   u64 length = strlen(str);
   LPDWORD written = 0;
@@ -144,7 +144,7 @@ void platform_console_write_error(conststr str, u8 color) {
   setvbuf(stdout, NULL, _IONBF, 0);
   HANDLE hConsole = GetStdHandle(STD_ERROR_HANDLE);
   //FATAL, ERROR, WARN, INFO, DEBUG, TRACE
-  static u8 levels[6] = {132, 140, 142, 143, 139, 141};
+  static u8 levels[7] = {132, 140, 142, 143, 139, 141, 0};
   SetConsoleTextAttribute(hConsole, levels[color]);
   u64 length = strlen(str);
   LPDWORD written = 0;

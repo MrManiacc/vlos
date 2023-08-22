@@ -1,6 +1,4 @@
-/**
- * Created by jraynor on 8/21/2023.
- */
+
 
 #include "app.h"
 

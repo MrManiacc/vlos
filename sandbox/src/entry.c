@@ -1,12 +1,9 @@
-/**
- * Created by jraynor on 8/21/2023.
- */
+
 #include "entry.h"
 #include "app.h"
-#include "platform/platform.h"
-
 
 b8 create_application(app_host *app) {
+  //configure our application
   app->config.x = 100;
   app->config.y = 100;
   app->config.width = 800;
@@ -15,6 +12,7 @@ b8 create_application(app_host *app) {
   app->create = app_init;
   app->update = app_update;
   app->render = app_render;
-  app->state = platform_allocate(sizeof(app_state), false);
+  // create our application state
+  app->state = mem_alloc(sizeof(app_state), MEM_TAG_APPLICATION);
   return true;
 }

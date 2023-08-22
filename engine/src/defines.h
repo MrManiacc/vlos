@@ -11,6 +11,12 @@ typedef const char *conststr;
 typedef char *str;
 
 /**
+ * Our pointer types
+ */
+typedef void *ptr;
+typedef const void *constptr;
+
+/**
  * Our unsigned integer types
  */
 typedef unsigned char u8;

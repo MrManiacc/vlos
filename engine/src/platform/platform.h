@@ -43,19 +43,19 @@ VAPI b8 platform_pump_messages(platform_state *state);
  * @param aligned  Whether or not the memory should be aligned
  * @return  The pointer to the allocated memory
  */
-VAPI void *platform_allocate(u64 size, b8 aligned);
+void *platform_allocate(u64 size, b8 aligned);
 
 /**
  * Frees memory on the platform specific heap. This should be called for every call to platform_allocate.
- * @param ptr The pointer to the memory to free
+ * @param void* The pointer to the memory to free
  * @param aligned Whether or not the memory was aligned
  * @return  The pointer to the allocated memory
  */
-VAPI void platform_free(void *ptr, b8 aligned);
+void platform_free(void *ptr, b8 aligned);
 
 /**
  * Zeroes out the memory at the given pointer for the given size.
- * @param ptr The pointer to the memory to zero out
+ * @param void* The pointer to the memory to zero out
  * @param size The size of the memory to zero out
  * @return  The pointer to the memory
  */

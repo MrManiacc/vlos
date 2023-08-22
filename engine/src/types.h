@@ -1,6 +1,4 @@
-/**
- * Created by jraynor on 8/21/2023.
- */
+
 #pragma once
 #include "defines.h"
 #include "core/application.h"

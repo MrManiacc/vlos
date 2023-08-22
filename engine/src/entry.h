@@ -1,11 +1,11 @@
 #pragma once
 
-/**
- * Created by jraynor on 8/21/2023.
- */
+
 #include "core/application.h"
 #include "core/logger.h"
+#include "core/mem.h"
 #include "types.h"
+
 /**
  * Externally create the application. This is called once at the start of the application.
  * This is defined outside of the context of this assembly. This is defined by the user.
@@ -16,6 +16,7 @@
 extern b8 create_application(app_host *app);
 
 int main(void) {
+  mem_init();
   app_host app;
   // Create the application
   if (!create_application(&app)) {
@@ -40,6 +41,7 @@ int main(void) {
     vwarn("Failed to shutdown gracefully");
     return 2;
   }
+  mem_shutdown();
   return 0;
 }
 

@@ -5,13 +5,13 @@
 #include <time.h>
 #include "platform/platform.h"
 
-b8 initialize_logger() {
-
+b8 logger_initialize() {
+  vdebug("Initialized the debugger")
   return true;
 }
 
-void shutdown_logger() {
-  //TODO: Shutdown the logger and dump to a log file
+void logger_shutdown() {
+  vdebug("Shutting down the debugger")
 }
 
 VAPI void log_output(log_level level, const char *file, i32 line, const char *format, ...) {
@@ -48,11 +48,11 @@ VAPI void log_output(log_level level, const char *file, i32 line, const char *fo
   //combine the time, file, and line number
   char header[256];
   if (level == LOG_LEVEL_WARN || level == LOG_LEVEL_INFO)
-    sprintf(header, "  // %s // %s:%d - ", timeBuffer, file_name, line);
+    sprintf(header, "  // %s // %s:%d // ", timeBuffer, file_name, line);
   else
-    sprintf(header, " // %s // %s:%d - ", timeBuffer, file_name, line);
-  (*print)(header, LOG_LEVEL_INFO);
-  (*print)(buffer, level);
+    sprintf(header, " // %s // %s:%d // ", timeBuffer, file_name, line);
+  (*print)(header, LOG_LEVEL_WARN);
+  (*print)(buffer, 3);
   (*print)("\n", LOG_LEVEL_INFO);
 }
 

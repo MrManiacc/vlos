@@ -1,11 +1,9 @@
-/**
- * Created by jraynor on 8/21/2023.
- */
 #include "types.h"
 #include "application.h"
 #include "platform/platform.h"
 #include "logger.h"
-
+#include "core/mem.h"
+#include "core/event.h"
 /**
  * Internally initializes the platform state and returns it. This is per platform and should be called
  * by the platform specific code. This will also initialize the logger any all other core systems.
@@ -40,10 +38,17 @@ b8 application_create(app_host *host) {
   }
   state.host = host;
   //Initialize our subsystems
-  initialize_logger();
-  vinfo("Initialized the logger")
+  if (!logger_initialize()) {
+    verror("Failed to initialize the logger")
+    return false;
+  }
   state.running = true;
   state.suspended = false;
+
+  if (!event_initialize()) {
+    verror("Event system failed initialization. Application cannot continue.");
+    return false;
+  }
   if (!platform_startup(&state.platform,
                         host->config.title,
                         host->config.x,
@@ -71,27 +76,26 @@ b8 application_run() {
     verror("Application not initialized")
     return false;
   }
+  vinfo(mem_usage_str())
   while (state.running) {
     platform_pump_messages(&state.platform);
     if (!state.suspended) {
       f64 current_time = platform_get_time();
       f64 delta_time = current_time - state.last_time;
       state.last_time = current_time;
-      if (!state.host->update(state.host, (f32) delta_time)) {
+      // Update and render the application
+      if (!state.host->update(state.host, (f32) delta_time) ||
+          !state.host->render(state.host, (f32) delta_time)) {
         vfatal("Failed to update the application")
         state.running = false;
         break;
       }
-      if (!state.host->render(state.host, (f32) delta_time)) {
-        vfatal("Failed to render the application")
-        state.running = false;
-        break;
-      }
-//      platform_update(&app_state.platform, delta_time);
     }
   }
   vwarn("Shutting down the application")
+  state.running = false;
+  event_shutdown();
   platform_shutdown(&state.platform);
   // Shutdown logger last just in case we need to log anything during shutdown
-  shutdown_logger();
+  logger_shutdown();
 }

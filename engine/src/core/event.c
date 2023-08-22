@@ -113,7 +113,7 @@ b8 event_trigger(u16 event_code, void *sender, event_context context_data) {
   }
 
   if (state.registered[event_code].events == 0) {
-    vwarn("No listeners registered for event code: %d", event_code);
+//    vwarn("No listeners registered for event code: %d", event_code);
     return false;
   }
 

@@ -37,7 +37,7 @@ int main(void) {
   }
   vdebug("Initialized the application")
   // Begin the game loop
-  if (application_run()) {
+  if (!application_run()) {
     vwarn("Failed to shutdown gracefully");
     return 2;
   }

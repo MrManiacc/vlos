@@ -7,7 +7,8 @@
 /**
  * Our string types
  */
-typedef const char *string;
+typedef const char *conststr;
+typedef char *str;
 
 /**
  * Our unsigned integer types
@@ -72,21 +73,21 @@ STATIC_ASSERT(sizeof(b8) == 1, "b8 is not 1 byte");
  */
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-#define PLATFORM_WINDOWS 1
+#define VPLATFORM_WINDOWS 1
 #ifndef _WIN64
 #error "64 bit windows is required"
 #endif
 #elif defined(__linux__) || defined(__gnu_linux__)
-#define PLATFORM_LINUX 1
+#define VPLATFORM_LINUX 1
 #elif defined(__ANDROID__)
-#define PLATFORM_ANDROID 1
+#define VPLATFORM_ANDROID 1
 #elif defined(__APPLE__)
-#define PLATFORM_APPLE 1
+#define VPLATFORM_APPLE 1
 #include <TagetConditionals.h>
 #if TARGET_OS_IPHONE
-#define PLATFORM_IOS 1
+#define VPLATFORM_IOS 1
 #elif TARGET_OS_MAC
-#define PLATFORM_MAC 1
+#define VPLATFORM_MAC 1
 #else
 #error "Unknown Apple platform"
 #endif
@@ -94,9 +95,8 @@ STATIC_ASSERT(sizeof(b8) == 1, "b8 is not 1 byte");
 #error "Unknown platform"
 #endif
 
-
 #ifdef PLATFORM_EXPORT
-#if defined(PLATFORM_WINDOWS)
+#if defined(VPLATFORM_WINDOWS)
 #define VAPI __declspec(dllexport)
 #elif defined(PLATFORM_LINUX)
 #define VAPI __attribute__((visibility("default")))
@@ -104,7 +104,7 @@ STATIC_ASSERT(sizeof(b8) == 1, "b8 is not 1 byte");
 #define VAPI
 #endif
 #else
-#if defined(PLATFORM_WINDOWS)
+#if defined(VPLATFORM_WINDOWS)
 #define VAPI __declspec(dllimport)
 #else
 #define VAPI

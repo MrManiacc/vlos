@@ -19,53 +19,52 @@
 #endif
 
 typedef enum log_level {
-    LOG_LEVEL_FATAL = 0,
-    LOG_LEVEL_DEBUG = 1,
-    LOG_LEVEL_TRACE = 2,
-    LOG_LEVEL_INFO = 3,
-    LOG_LEVEL_WARN = 4,
-    LOG_LEVEL_ERROR = 5
+  LOG_LEVEL_FATAL = 0,
+  LOG_LEVEL_ERROR = 1,
+  LOG_LEVEL_WARN = 2,
+  LOG_LEVEL_INFO = 3,
+  LOG_LEVEL_DEBUG = 4,
+  LOG_LEVEL_TRACE = 5,
 } log_level;
 
+VAPI b8 initialize_logger();
 
-b8 initialize_logger();
-
-void shutdown_logger();
+VAPI void shutdown_logger();
 
 VAPI void log_output(log_level level, const char *file, i32 line, const char *format, ...);
 
 #if LOG_FATAL_ENABLED == 1
-#define FATAL(format, ...) log_output(LOG_LEVEL_FATAL, __FILE__, __LINE__, format, ##__VA_ARGS__);
+#define vfatal(format, ...) log_output(LOG_LEVEL_FATAL, __FILE__, __LINE__, format, ##__VA_ARGS__);
 #elif
-#define FATAL(format, ...)
+#define vfatal(format, ...)
 #endif
 
 #if LOG_INFO_ENABLED == 1
-#define INFO(format, ...) log_output(LOG_LEVEL_INFO, __FILE__, __LINE__, format, ##__VA_ARGS__);
+#define vinfo(format, ...) log_output(LOG_LEVEL_INFO, __FILE__, __LINE__, format, ##__VA_ARGS__);
 #elif
-#define INFO(format, ...)
+#define vinfo(format, ...)
 #endif
 
 #if LOG_WARN_ENABLED == 1
-#define WARN(format, ...) log_output(LOG_LEVEL_WARN, __FILE__, __LINE__, format, ##__VA_ARGS__);
+#define vwarn(format, ...) log_output(LOG_LEVEL_WARN, __FILE__, __LINE__, format, ##__VA_ARGS__);
 #elif
-#define WARN(format, ...)
+#define vwarn(format, ...)
 #endif
 
 #if LOG_ERROR_ENABLED == 1
-#define ERROR(format, ...) log_output(LOG_LEVEL_ERROR, __FILE__, __LINE__, format, ##__VA_ARGS__);
+#define verror(format, ...) log_output(LOG_LEVEL_ERROR, __FILE__, __LINE__, format, ##__VA_ARGS__);
 #elif
 #define ERROR(format, ...)
 #endif
 
 #if LOG_DEBUG_ENABLED == 1
-#define DEBUG(format, ...) log_output(LOG_LEVEL_DEBUG, __FILE__, __LINE__, format, ##__VA_ARGS__);
+#define vdebug(format, ...) log_output(LOG_LEVEL_DEBUG, __FILE__, __LINE__, format, ##__VA_ARGS__);
 #else
-#define DEBUG(format, ...)
+#define vdebug(format, ...)
 #endif
 
 #if LOG_TRACE_ENABLED == 1
-#define TRACE(format, ...) log_output(LOG_LEVEL_TRACE, __FILE__, __LINE__, format, ##__VA_ARGS__);
+#define vtrace(format, ...) log_output(LOG_LEVEL_TRACE, __FILE__, __LINE__, format, ##__VA_ARGS__);
 #else
-#define TRACE(format, ...)
+#define vtrace(format, ...)
 #endif

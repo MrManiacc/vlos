@@ -3,11 +3,10 @@
 //
 
 #pragma once
-
 #include "defines.h"
 
 typedef struct platform_state {
-    void *internal_state;
+  void *internal_state;
 } platform_state;
 
 /**
@@ -21,14 +20,22 @@ typedef struct platform_state {
  * @param height The height of the window
  * @return  Whether or not the platform was successfully initialized
  */
-b8 platform_startup(platform_state *state, string str, i32 x, i32 y, i32 width, i32 height);
+VAPI b8 platform_startup(platform_state *state, conststr str, i32 x, i32 y, i32 width, i32 height);
 
 /**
  * Internally shuts down the platform state. This is per platform and should be called
  * by the platform specific code.
  * @param state The platform state to shut down
  */
-void platform_shutdown(platform_state *state);
+VAPI void platform_shutdown(platform_state *state);
+
+/**
+ * Internally polls the platform for messages. This is per platform and should be called
+ * by the platform specific code.
+ * @param state The platform state to poll
+ * @return  Whether or not the platform was successfully initialized
+ */
+VAPI b8 platform_pump_messages(platform_state *state);
 
 /**
  * Allocates memory on the platform specific heap.
@@ -36,7 +43,7 @@ void platform_shutdown(platform_state *state);
  * @param aligned  Whether or not the memory should be aligned
  * @return  The pointer to the allocated memory
  */
-void *platform_allocate(u64 size, b8 aligned);
+VAPI void *platform_allocate(u64 size, b8 aligned);
 
 /**
  * Frees memory on the platform specific heap. This should be called for every call to platform_allocate.
@@ -44,7 +51,7 @@ void *platform_allocate(u64 size, b8 aligned);
  * @param aligned Whether or not the memory was aligned
  * @return  The pointer to the allocated memory
  */
-void platform_free(void *ptr, b8 aligned);
+VAPI void platform_free(void *ptr, b8 aligned);
 
 /**
  * Zeroes out the memory at the given pointer for the given size.
@@ -71,6 +78,21 @@ void *platform_copy_memory(void *dest, const void *src, u64 size);
  * @return The pointer to the memory
  */
 void *platform_set_memory(void *dest, i32 value, u64 size);
+
+
+/**
+ * Writes the given string to the console with the given color to stdout
+ * @param str The string to write
+ * @param color The color to write the string in
+ */
+VAPI void platform_console_write(conststr str, u8 color);
+
+/**
+ * Writes the given string to the console with the given color to stderr
+ * @param str The string to write
+ * @param color The color to write the string in
+ */
+VAPI void platform_console_write_error(conststr str, u8 color);
 
 /**
  * Returns the current time in milliseconds

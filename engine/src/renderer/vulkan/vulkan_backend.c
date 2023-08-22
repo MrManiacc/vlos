@@ -7,7 +7,8 @@
 #include "core/logger.h"
 #include "core/vstring.h"
 #include "containers/darray.h"
-#include "renderer/vulkan/vulkan_platform.h"
+#include "renderer/vulkan/vulkan_device.h"
+#include "vulkan_platform.h"
 
 //internally store a static vulkan context
 static vulkan_context context;
@@ -49,7 +50,6 @@ b8 vulkan_backend_initialize(renderer_backend *out_renderer_backend, conststr ap
     //validation layers
     const char **required_validation_layers = nil;
     u32 required_validation_layer_count = nil;
-
 
 #if defined(DEBUG_BUILD)
     vinfo("Validation layer enabled, enumerating available layers")
@@ -107,6 +107,20 @@ b8 vulkan_backend_initialize(renderer_backend *out_renderer_backend, conststr ap
     VK_CHECK(func(context.instance, &debug_create_info, context.allocator, &context.debug_messenger))
     vdebug("Successfully created vulkan debugger");
 #endif
+    vdebug("Creating vulkan surface...")
+    if (!platform_create_vulkan_surface(plat_state, &context)) {
+        vfatal("Failed to create vulkan surface")
+        return false;
+    }
+    vdebug("Successfully created vulkan surface")
+
+    if (!vulkan_device_create(&context)) {
+        vfatal("Failed to create vulkan device")
+        return false;
+    }
+
+    vinfo("Vulkan renderer initialized successfully")
+
     return true;
 }
 

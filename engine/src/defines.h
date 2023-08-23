@@ -93,17 +93,17 @@ STATIC_ASSERT(sizeof(b8) == 1, "b8 is not 1 byte");
 #elif defined(__ANDROID__)
 #define VPLATFORM_ANDROID 1
 #elif defined(__APPLE__)
-//#define VPLATFORM_APPLE 1
-//#include <TagetConditionals.h>
-//#if TARGET_OS_IPHONE
-//#define VPLATFORM_IOS 1
-//#elif TARGET_OS_MAC
-//#define VPLATFORM_MAC 1
-//#else
-//#error "Unknown Apple platform"
-//#endif
-//#else
-//#error "Unknown platform"
+#define VPLATFORM_APPLE 1
+#include <TargetConditionals.h>
+#if TARGET_OS_IPHONE
+#define VPLATFORM_IOS 1
+#elif TARGET_OS_OSX
+#define VPLATFORM_MACOS 1
+#else
+#error "Unknown Apple platform"
+#endif
+#else
+#error "Unknown platform"
 #endif
 
 #ifdef PLATFORM_EXPORT

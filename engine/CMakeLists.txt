@@ -5,29 +5,39 @@ if (DEFINED VULKAN_SDK_PATH)
     set(Vulkan_INCLUDE_DIRS "${VULKAN_SDK_PATH}/Include") # 1.1 Make sure this include path is correct
     set(Vulkan_LIBRARIES "${VULKAN_SDK_PATH}/Lib") # 1.2 Make sure lib path is correct
     set(Vulkan_FOUND "True")
-else()
+else ()
     find_package(Vulkan REQUIRED) # throws error if could not find Vulkan
     message(STATUS "Found Vulkan: $ENV{VULKAN_SDK}")
-endif()
+endif ()
 if (NOT Vulkan_FOUND)
     message(FATAL_ERROR "Could not find Vulkan library!")
-else()
+else ()
     message(STATUS "Using vulkan lib at: ${Vulkan_LIBRARIES}")
-endif()
+endif ()
 
 # Glob's are evil, but this is a small project
-file(GLOB_RECURSE SOURCES "*.c" "*.h" "*.inl")
+file(GLOB_RECURSE SOURCES "*.c" "*.h" "*.inl" "*.m")
 
 add_library(engine SHARED ${SOURCES})
 set_target_properties(engine PROPERTIES LINKER_LANGUAGE C)
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+
+if (APPLE)
+    # Allow for Objective-C compilation on macOS
+    enable_language(OBJC OBJCXX)
+    find_library(COCOA_LIBRARY Cocoa)
+    find_library(FOUNDATION_LIBRARY Foundation)
+    mark_as_advanced(COCOA_LIBRARY FOUNDATION_LIBRARY)
+    target_link_libraries(engine ${COCOA_LIBRARY} ${FOUNDATION_LIBRARY})
+endif ()
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     # Include Vulkan header files from Vulkan SDK
     include_directories(AFTER ${VULKAN_PATH}/Include)
 
     # Link directory for vulkan-1
     link_directories(${VULKAN_PATH}/Bin;${VULKAN_PATH}/Lib;)
-endif()
+endif ()
 
 
 target_include_directories(engine PUBLIC

@@ -15,14 +15,18 @@ else ()
     message(STATUS "Using vulkan lib at: ${Vulkan_LIBRARIES}")
 endif ()
 
-# Glob's are evil, but this is a small project
-file(GLOB_RECURSE SOURCES "*.c" "*.h" "*.inl" "*.m")
-
+if (APPLE)
+    # Glob's are evil, but this is a small project
+    file(GLOB_RECURSE SOURCES "*.c" "*.h" "*.inl" "*.m")
+else ()
+    file(GLOB_RECURSE SOURCES "*.c" "*.h" "*.inl")
+endif ()
 add_library(engine SHARED ${SOURCES})
 set_target_properties(engine PROPERTIES LINKER_LANGUAGE C)
 
 
 if (APPLE)
+    message("Building for macOS")
     # Allow for Objective-C compilation on macOS
     enable_language(OBJC OBJCXX)
     find_library(COCOA_LIBRARY Cocoa)

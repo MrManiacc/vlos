@@ -206,8 +206,17 @@ LRESULT CALLBACK win32_process_message(HWND hWnd, UINT uMsg, WPARAM wParam, LPAR
             return 0;
         }
         case WM_SIZE: {
-            //TODO: handle resizing
-            vdebug("Resizing window")
+            RECT r;
+            GetClientRect(hWnd, &r);
+            u32 width = r.right - r.left;
+            u32 height = r.bottom - r.top;
+
+            // Fire the event. The application layer should pick this up, but not handle it
+            // as it shouldn be visible to other parts of the application.
+            event_context context;
+            context.u16[0] = (u16)width;
+            context.u16[1] = (u16)height;
+            event_trigger(SYSTEM_EVENT_CODE_WINDOW_RESIZE, 0, context);
         }
             break;
         case WM_KEYDOWN:

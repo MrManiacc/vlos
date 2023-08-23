@@ -8,11 +8,11 @@
 /**
  * Creates a renderpass that can be used to render to the screen. This renderpass is created with a single subpass.
  * @param context The vulkan context
- * @param outer_renderpass The renderpass to create
+ * @param out_renderpass The renderpass to create
  */
 void vulkan_render_pass_create(
     vulkan_context *context,
-    vulkan_render_pass *outer_renderpass,
+    vulkan_render_pass *out_renderpass,
     f32 x, f32 y, f32 w, f32 h,
     f32 r, f32 g, f32 b, f32 a,
     f32 depth,

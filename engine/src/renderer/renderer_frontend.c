@@ -40,6 +40,15 @@ bool renderer_begin_frame(f32 time) {
     return result;
 }
 
+void renderer_resized(u16 width, u16 height) {
+    if (backend) {
+        backend->resized(backend, width, height);
+    } else {
+        vwarn("renderer backend does not exist to accept resize: %i %i", width, height);
+    }
+}
+
+
 b8 renderer_draw_frame(render_packet *packet) {
     if (renderer_begin_frame(packet->delta_time)) {
         //End the frame, if it fails it's a fatal error and is not recoverable
@@ -51,4 +60,3 @@ b8 renderer_draw_frame(render_packet *packet) {
     }
     return true;
 }
-

@@ -12,6 +12,7 @@ b8 create_application(app_host *app) {
   app->create = app_init;
   app->update = app_update;
   app->render = app_render;
+  app->on_resize = app_resize;
   // create our application state
   app->state = mem_alloc(sizeof(app_state), MEM_TAG_APPLICATION);
   return true;

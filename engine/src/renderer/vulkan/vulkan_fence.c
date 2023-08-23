@@ -43,8 +43,10 @@ b8 vulkan_fence_wait(vulkan_context *context, vulkan_fence *fence, u64 timeout_n
             true,
             timeout_ns);
         switch (result) {
-            case VK_SUCCESS:fence->is_signaled = true;
-                return true;
+            case VK_SUCCESS:
+                fence->is_signaled = true;
+
+            return true;
             case VK_TIMEOUT:vwarn("vk_fence_wait - Timed out");
                 break;
             case VK_ERROR_DEVICE_LOST:verror("vk_fence_wait - VK_ERROR_DEVICE_LOST.");

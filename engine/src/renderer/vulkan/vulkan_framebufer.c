@@ -38,6 +38,7 @@ void vulkan_framebuffer_create(
         &out_framebuffer->handle));
 }
 
+
 void vulkan_framebuffer_destroy(vulkan_context *context, vulkan_framebuffer *framebuffer) {
     vkDestroyFramebuffer(context->device.logical_device, framebuffer->handle, context->allocator);
     if (framebuffer->attachments) {

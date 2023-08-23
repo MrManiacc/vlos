@@ -10,11 +10,11 @@ b8 render_backend_create(renderer_backend_type type, struct platform_state *plat
                          renderer_backend *out_renderer_backend) {
     out_renderer_backend->plat_state = plat_state;
     if (type == RENDERER_BACKEND_TYPE_VULKAN) {
-        out_renderer_backend->initialize = vulkan_backend_initialize;
-        out_renderer_backend->shutdown = vulkan_backend_shutdown;
-        out_renderer_backend->resized = vulkan_backend_resized;
-        out_renderer_backend->begin_frame = vulkan_backend_begin_frame;
-        out_renderer_backend->end_frame = vulkan_backend_end_frame;
+        out_renderer_backend->initialize = vulkan_renderer_backend_initialize;
+        out_renderer_backend->shutdown = vulkan_renderer_backend_shutdown;
+        out_renderer_backend->resized = vulkan_renderer_backend_on_resized;
+        out_renderer_backend->begin_frame = vulkan_renderer_backend_begin_frame;
+        out_renderer_backend->end_frame = vulkan_renderer_backend_end_frame;
         return true;
     }
     //Failed to create the renderer or invalid type was given

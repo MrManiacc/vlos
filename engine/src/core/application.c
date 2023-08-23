@@ -32,6 +32,8 @@ b8 application_on_event(u16 code, ptr sender, ptr listener_inst, event_context c
 
 b8 application_on_key(u16 code, ptr sender, ptr listener_inst, event_context context);
 
+b8 application_on_resized(u16 code, void *sender, void *listener_inst, event_context context);
+
 /**
  * Internally initializes the platform state and returns it. This is per platform and should be called
  * by the platform specific code. This will also initialize the logger any all other core systems.
@@ -63,6 +65,7 @@ b8 application_create(app_host *host) {
     event_register(SYSTEM_EVENT_CODE_QUIT, 0, application_on_event);
     event_register(SYSTEM_EVENT_CODE_KEY_PRESS, 0, application_on_key);
     event_register(SYSTEM_EVENT_CODE_KEY_RELEASE, 0, application_on_key);
+    event_register(SYSTEM_EVENT_CODE_WINDOW_RESIZE, 0, application_on_resized);
     if (!platform_startup(&state.platform,
                           host->config.title,
                           host->config.x,
@@ -88,6 +91,10 @@ b8 application_create(app_host *host) {
         vfatal("Failed to initialize the application")
         return false;
     }
+
+
+    state.host->on_resize(state.host, state.width, state.height);
+
     vinfo("Initialized the platform")
     initialized = true;
     return true;
@@ -162,6 +169,7 @@ b8 application_run() {
     event_unregister(SYSTEM_EVENT_CODE_QUIT, application_on_event);
     event_unregister(SYSTEM_EVENT_CODE_KEY_PRESS, application_on_key);
     event_unregister(SYSTEM_EVENT_CODE_KEY_RELEASE, application_on_key);
+    event_unregister(SYSTEM_EVENT_CODE_WINDOW_RESIZE, application_on_resized);
     event_shutdown(); //shutdown the event subsystem
     input_shutdown(); //shutdown the input subsystem
     renderer_shutdown(); //shutdown the renderer
@@ -171,7 +179,7 @@ b8 application_run() {
     return true;
 }
 
-void application_get_framebuffer_size(u32* width, u32* height) {
+void application_get_framebuffer_size(u32 *width, u32 *height) {
     *width = state.width;
     *height = state.height;
 }
@@ -199,5 +207,37 @@ b8 application_on_key(u16 code, ptr sender, ptr listener_inst, event_context con
         keys key = (keys) context.u16[0];
         vinfo("Key released: %c", key)
     }
+    return false;
+}
+
+b8 application_on_resized(u16 code, void *sender, void *listener_inst, event_context context) {
+    if (code == SYSTEM_EVENT_CODE_WINDOW_RESIZE) {
+        u16 width = context.u16[0];
+        u16 height = context.u16[1];
+
+        // Check if different. If so, trigger a resize event.
+        if (width != state.width || height != state.height) {
+            state.width = width;
+            state.height = height;
+
+            vdebug("Window resize: %i, %i", width, height);
+
+            // Handle minimization
+            if (width == 0 || height == 0) {
+                vinfo("Window minimized, suspending application.");
+                state.suspended = true;
+                return true;
+            } else {
+                if (state.suspended) {
+                    vinfo("Window restored, resuming application.");
+                    state.suspended = false;
+                }
+                state.host->on_resize(state.host, width, height);
+                renderer_resized(width, height);
+            }
+        }
+    }
+
+    // Event purposely not handled to allow other listeners to get this.
     return false;
 }

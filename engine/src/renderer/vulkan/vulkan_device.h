@@ -19,3 +19,19 @@ b8 vulkan_device_create(vulkan_context *context);
  * @param context the context to destroy the device for
  */
 void vulkan_device_destroy(vulkan_context *context);
+
+/**
+ * Queries the swapchain support for the given physical device and surface.
+ * @param physical_device  The physical device to query
+ * @param surface The surface to query
+ * @param out_support_info  The swapchain support info to fill out
+ */
+void vulkan_device_query_swapchain_support(VkPhysicalDevice physical_device,
+                                           VkSurfaceKHR surface,
+                                           vulkan_swapchain_support_info *out_support_info);
+/**
+ * Queries the physical device for the best depth format.
+ * @param device the device to query
+ * @return whether we have the depth format
+ */
+b8 vulkan_device_detect_depth_format(vulkan_device *device);

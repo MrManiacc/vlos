@@ -157,6 +157,7 @@ b8 application_run() {
         }
     }
     vwarn("Shutting down the application")
+    mem_free(state.host->state, 4, MEM_TAG_APPLICATION);
     state.running = false;
     event_unregister(SYSTEM_EVENT_CODE_QUIT, application_on_event);
     event_unregister(SYSTEM_EVENT_CODE_KEY_PRESS, application_on_key);

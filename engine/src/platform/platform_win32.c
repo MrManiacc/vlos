@@ -15,14 +15,14 @@
 #include "defines.h"
 #include "renderer/vulkan/vulkan_types.inl"
 #include <vulkan/vulkan_win32.h>
-
+#include "core/event.h"
 static f64 clock_frequency;
 static LARGE_INTEGER start_time;
 
 typedef struct internal_state {
-    HINSTANCE hInstance;
-    HWND hWnd;
-    VkSurfaceKHR surface;
+  HINSTANCE hInstance;
+  HWND hWnd;
+  VkSurfaceKHR surface;
 } internal_state;
 
 LRESULT CALLBACK win32_process_message(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -175,24 +175,32 @@ void platform_required_extensions(const char ***names_darray) {
 }
 
 b8 platform_create_vulkan_surface(platform_state *plat_state, vulkan_context *context) {
+    // Simply cold-cast to the known type.
     internal_state *state = (internal_state *) plat_state->internal_state;
-    VkWin32SurfaceCreateInfoKHR surface_create_info = {VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR};
-    surface_create_info.hinstance = state->hInstance;
-    surface_create_info.hwnd = state->hWnd;
 
-    VK_CHECK(vkCreateWin32SurfaceKHR(context->instance, &surface_create_info, context->allocator, &context->surface));
+    VkWin32SurfaceCreateInfoKHR create_info = {VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR};
+    create_info.hinstance = state->hInstance;
+    create_info.hwnd = state->hWnd;
+
+    VkResult result = vkCreateWin32SurfaceKHR(context->instance, &create_info, context->allocator, &state->surface);
+    if (result != VK_SUCCESS) {
+        vfatal("Vulkan surface creation failed.");
+        return FALSE;
+    }
+
     context->surface = state->surface;
-    return true;
+    return TRUE;
 }
-
 
 LRESULT CALLBACK win32_process_message(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
-        case WM_ERASEBKGND:
-            return 1;
+        case WM_ERASEBKGND:return 1;
             //TODO: post an application quit message
-        case WM_CLOSE:
+        case WM_CLOSE: {
+            event_context context;
+            event_trigger(SYSTEM_EVENT_CODE_QUIT, NULL, context);
             return 0;
+        }
         case WM_DESTROY: {
             PostQuitMessage(0);
             return 0;
@@ -236,16 +244,13 @@ LRESULT CALLBACK win32_process_message(HWND hWnd, UINT uMsg, WPARAM wParam, LPAR
             buttons mouse_button = BUTTON_MAX_BUTTONS;
             switch (uMsg) {
                 case WM_LBUTTONDOWN:
-                case WM_LBUTTONUP:
-                    mouse_button = BUTTON_LEFT;
+                case WM_LBUTTONUP:mouse_button = BUTTON_LEFT;
                     break;
                 case WM_RBUTTONDOWN:
-                case WM_RBUTTONUP:
-                    mouse_button = BUTTON_RIGHT;
+                case WM_RBUTTONUP:mouse_button = BUTTON_RIGHT;
                     break;
                 case WM_MBUTTONDOWN:
-                case WM_MBUTTONUP:
-                    mouse_button = BUTTON_MIDDLE;
+                case WM_MBUTTONUP:mouse_button = BUTTON_MIDDLE;
                     break;
             }
             //TODO: handle mouse button

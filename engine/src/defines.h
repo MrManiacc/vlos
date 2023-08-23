@@ -49,7 +49,6 @@ typedef char b8;
  */
 #define nil 0
 
-
 #if defined(__clang__) || defined(__gcc__)
 #define STATIC_ASSERT _Static_assert
 #else
@@ -122,3 +121,5 @@ STATIC_ASSERT(sizeof(b8) == 1, "b8 is not 1 byte");
 #define VAPI
 #endif
 #endif
+
+#define vclamp(value, min, max) ((value) < (min) ? (min) : ((value) > (max) ? (max) : (value)))

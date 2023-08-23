@@ -16,7 +16,7 @@ void logger_shutdown() {
 
 VAPI void log_output(log_level level, const char *file, i32 line, const char *format, ...) {
     b8 is_error = level == LOG_LEVEL_ERROR || level == LOG_LEVEL_FATAL;
-    void (*print)(conststr, u8) = is_error ? &platform_console_write_error : &platform_console_write;
+    void (*print)(const str, u8) = is_error ? &platform_console_write_error : &platform_console_write;
     const char *file_name = strrchr(file, '/');
     if (!file_name) {
         file_name = strrchr(file, '\\');
@@ -42,7 +42,7 @@ VAPI void log_output(log_level level, const char *file, i32 line, const char *fo
     tm = localtime(&rawtime);
     strftime(timeBuffer, sizeof(timeBuffer), "%H:%M:%S", tm);
 
-    static conststr levels[6] = {"[FATAL]", "[ERROR]", "[WARN]", "[INFO]", "[DEBUG]", "[TRACE]"};
+    static const str levels[6] = {"[FATAL]", "[ERROR]", "[WARN]", "[INFO]", "[DEBUG]", "[TRACE]"};
     (*print)(levels[level], level);
 
     //combine the time, file, and line number

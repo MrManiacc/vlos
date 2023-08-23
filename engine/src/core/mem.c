@@ -110,6 +110,6 @@ str mem_usage_str() {
         i32 length = snprintf(buffer + offset, 8000, "  %s: %.2f%s\n", memory_tag_strings[i], amount, unit);
         offset += length;
     }
-    char *out_string = _strdup(buffer);
+    char *out_string = strdup(buffer);
     return out_string;
 }

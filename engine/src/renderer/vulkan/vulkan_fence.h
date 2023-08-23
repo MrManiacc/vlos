@@ -1,6 +1,3 @@
-/**
- * Created by jraynor on 8/22/2023.
- */
 #pragma once
 
 #include "vulkan_types.inl"

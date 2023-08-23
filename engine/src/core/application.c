@@ -1,243 +1,248 @@
-#include "types.h"
 #include "application.h"
+#include "types.h"
+
+#include "logger.h"
+
 #include "platform/platform.h"
-#include "core/logger.h"
 #include "core/mem.h"
 #include "core/event.h"
 #include "core/input.h"
 #include "core/clock.h"
+
 #include "renderer/renderer_frontend.h"
 
-/**
- * Internally initializes the platform state and returns it. This is per platform and should be called
- * by the platform specific code. This will also initialize the logger any all other core systems.
- */
 typedef struct application_state {
-    app_host *host; //< The host application
-    b8 running; //< Whether the application is running
-    b8 suspended; //< Whether the application is suspended
-    platform_state platform; //< The platform state
-    i16 width; //< The width of the surface
-    i16 height; //< The height of the surface
-    clock clock; //< The clock for the application. internally tracks the elapsed time
-    f64 last_time; //< The last time the application was updated
+    game* game_inst;
+    b8 is_running;
+    b8 is_suspended;
+    platform_state platform;
+    i16 width;
+    i16 height;
+    clock clock;
+    f64 last_time;
 } application_state;
 
-static b8 initialized = false;
-static application_state state;
+static b8 initialized = FALSE;
+static application_state app_state;
 
+// Event handlers
+b8 application_on_event(u16 code, void* sender, void* listener_inst, event_context context);
+b8 application_on_key(u16 code, void* sender, void* listener_inst, event_context context);
+b8 application_on_resized(u16 code, void* sender, void* listener_inst, event_context context);
 
-//Application event handlers
-b8 application_on_event(u16 code, ptr sender, ptr listener_inst, event_context context);
-
-b8 application_on_key(u16 code, ptr sender, ptr listener_inst, event_context context);
-
-b8 application_on_resized(u16 code, void *sender, void *listener_inst, event_context context);
-
-/**
- * Internally initializes the platform state and returns it. This is per platform and should be called
- * by the platform specific code. This will also initialize the logger any all other core systems.
- * @param config The configuration for the application
- * @return Whether or not the platform was successfully initialized
- */
-b8 application_create(app_host *host) {
+b8 application_create(game* game_inst) {
     if (initialized) {
-        vfatal("Application already initialized")
-        return false;
+        verror("application_create called more than once.");
+        return FALSE;
     }
-    if (!host) {
-        vfatal("Application host is null")
-        return false;
-    }
-    state.host = host;
-    //Initialize our subsystems
-    if (!logger_initialize()) {
-        vfatal("Failed to initialize the logger")
-        return false;
-    }
-    state.running = true;
-    state.suspended = false;
+
+    app_state.game_inst = game_inst;
+
+    // Initialize subsystems.
+    initialize_logging();
+    input_initialize();
+
+
+    app_state.is_running = TRUE;
+    app_state.is_suspended = FALSE;
 
     if (!event_initialize()) {
-        vfatal("Event system failed initialization. Application cannot continue.");
-        return false;
-    }
-    event_register(SYSTEM_EVENT_CODE_QUIT, 0, application_on_event);
-    event_register(SYSTEM_EVENT_CODE_KEY_PRESS, 0, application_on_key);
-    event_register(SYSTEM_EVENT_CODE_KEY_RELEASE, 0, application_on_key);
-    event_register(SYSTEM_EVENT_CODE_WINDOW_RESIZE, 0, application_on_resized);
-    if (!platform_startup(&state.platform,
-                          host->config.title,
-                          host->config.x,
-                          host->config.y,
-                          host->config.width,
-                          host->config.height)) {
-        vfatal("Failed to initialize the platform")
-        return false;
+        verror("Event system failed initialization. Application cannot continue.");
+        return FALSE;
     }
 
-    if (!renderer_initialize(host->config.title, &state.platform)) {
-        vfatal("Failed to initialize the renderer")
-        return false;
+    event_register(EVENT_CODE_APPLICATION_QUIT, 0, application_on_event);
+    event_register(EVENT_CODE_KEY_PRESSED, 0, application_on_key);
+    event_register(EVENT_CODE_KEY_RELEASED, 0, application_on_key);
+    event_register(EVENT_CODE_RESIZED, 0, application_on_resized);
+
+    if (!platform_startup(
+            &app_state.platform,
+            game_inst->app_config.name,
+            game_inst->app_config.start_pos_x,
+            game_inst->app_config.start_pos_y,
+            game_inst->app_config.start_width,
+            game_inst->app_config.start_height)) {
+        return FALSE;
     }
 
-
-    if (!input_initialize()) {
-        vfatal("Failed to initialize the input system")
-        return false;
+    // Renderer startup
+    if (!renderer_initialize(game_inst->app_config.name, &app_state.platform)) {
+        vfatal("Failed to initialize renderer. Aborting application.");
+        return FALSE;
     }
 
-    if (!state.host->create(state.host)) {
-        vfatal("Failed to initialize the application")
-        return false;
+    // Initialize the game.
+    if (!app_state.game_inst->initialize(app_state.game_inst)) {
+        vfatal("Game failed to initialize.");
+        return FALSE;
     }
 
+    app_state.game_inst->on_resize(app_state.game_inst, app_state.width, app_state.height);
 
-    state.host->on_resize(state.host, state.width, state.height);
+    initialized = TRUE;
 
-    vinfo("Initialized the platform")
-    initialized = true;
-    return true;
+    return TRUE;
 }
 
-/**
- * Internally runs the application. This is per platform and should be called by the platform specific code.
- * @return Whether or not the platform was successfully initialized
- */
 b8 application_run() {
-    if (!initialized) {
-        verror("Application not initialized")
-        return false;
-    }
-    clock_start(&state.clock);
-    clock_update(&state.clock);
-    state.last_time = state.clock.elapsed_time;
+    clock_start(&app_state.clock);
+    clock_update(&app_state.clock);
+    app_state.last_time = app_state.clock.elapsed;
     f64 running_time = 0;
     u8 frame_count = 0;
-    f64 frame_target = 1.0 / 60.0;
-    vinfo(mem_usage_str())
-    while (state.running) {
-        if (!platform_pump_messages(&state.platform)) {
-            vfatal("Failed to pump platform messages")
-            state.running = false;
-            break;
-        }
-        if (!state.suspended) {
-            clock_update(&state.clock);
-            f64 current_time = state.clock.elapsed_time;
-            f64 delta_time = current_time - state.last_time;
-            f64 frame_start_time = platform_get_time();
+    f64 target_frame_seconds = 1.0f / 60;
 
-            // Update and render the application
-            if (!state.host->update(state.host, (f32) delta_time) ||
-                !state.host->render(state.host, (f32) delta_time)) {
-                vfatal("Failed to update/render the application")
-                state.running = false;
+    vinfo(get_memory_usage_str());
+
+    while (app_state.is_running) {
+        if (!platform_pump_messages(&app_state.platform)) {
+            app_state.is_running = FALSE;
+        }
+
+        if (!app_state.is_suspended) {
+            // Update clock and get delta time.
+            clock_update(&app_state.clock);
+            f64 current_time = app_state.clock.elapsed;
+            f64 delta = (current_time - app_state.last_time);
+            f64 frame_start_time = platform_get_absolute_time();
+
+            if (!app_state.game_inst->update(app_state.game_inst, (f32)delta)) {
+                vfatal("Game update failed, shutting down.");
+                app_state.is_running = FALSE;
                 break;
             }
 
+            // Call the game's render routine.
+            if (!app_state.game_inst->render(app_state.game_inst, (f32)delta)) {
+                vfatal("Game render failed, shutting down.");
+                app_state.is_running = FALSE;
+                break;
+            }
+
+            // TODO: refactor packet creation
             render_packet packet;
-            packet.delta_time = (f32) delta_time;
+            packet.delta_time = delta;
             renderer_draw_frame(&packet);
 
-            f64 frame_end_time = platform_get_time();
-            f64 frame_time = frame_end_time - frame_start_time;
-            running_time += frame_time;
-            f64 remaining_time = frame_target - frame_time;
+            // Figure out how long the frame took and, if below
+            f64 frame_end_time = platform_get_absolute_time();
+            f64 frame_elapsed_time = frame_end_time - frame_start_time;
+            running_time += frame_elapsed_time;
+            f64 remaining_seconds = target_frame_seconds - frame_elapsed_time;
 
+            if (remaining_seconds > 0) {
+                u64 remaining_ms = (remaining_seconds * 1000);
 
-            if (remaining_time > 0) {
-                u64 remaining_ms = (remaining_time * 1000);
-                b8 limit_frames = false;
-                //TODO: This is a hack to limit the frames to 60. This should be done in a better way
+                // If there is time left, give it back to the OS.
+                b8 limit_frames = FALSE;
                 if (remaining_ms > 0 && limit_frames) {
                     platform_sleep(remaining_ms - 1);
                 }
+
                 frame_count++;
             }
 
-            // Update our input state. Input state handling should always be done after
-            // Any input has been recorded.
-            input_update(delta_time);
+            // NOTE: Input update/state copying should always be handled
+            // after any input should be recorded; I.E. before this line.
+            // As a safety, input is the last thing to be updated before
+            // this frame ends.
+            input_update(delta);
 
-            state.last_time = current_time;
+            // Update last time
+            app_state.last_time = current_time;
         }
     }
-    vwarn("Shutting down the application")
-    mem_free(state.host->state, 4, MEM_TAG_APPLICATION);
-    state.running = false;
-    event_unregister(SYSTEM_EVENT_CODE_QUIT, application_on_event);
-    event_unregister(SYSTEM_EVENT_CODE_KEY_PRESS, application_on_key);
-    event_unregister(SYSTEM_EVENT_CODE_KEY_RELEASE, application_on_key);
-    event_unregister(SYSTEM_EVENT_CODE_WINDOW_RESIZE, application_on_resized);
-    event_shutdown(); //shutdown the event subsystem
-    input_shutdown(); //shutdown the input subsystem
-    renderer_shutdown(); //shutdown the renderer
-    platform_shutdown(&state.platform); //shutdown the platform
-    // Shutdown logger last just in case we need to log anything during shutdown
-    logger_shutdown();
-    return true;
+
+    app_state.is_running = FALSE;
+
+    // Shutdown event system.
+    event_unregister(EVENT_CODE_APPLICATION_QUIT, 0, application_on_event);
+    event_unregister(EVENT_CODE_KEY_PRESSED, 0, application_on_key);
+    event_unregister(EVENT_CODE_KEY_RELEASED, 0, application_on_key);
+    event_shutdown();
+    input_shutdown();
+
+    renderer_shutdown();
+
+    platform_shutdown(&app_state.platform);
+
+    return TRUE;
 }
 
-void application_get_framebuffer_size(u32 *width, u32 *height) {
-    *width = state.width;
-    *height = state.height;
+void application_get_framebuffer_size(u32* width, u32* height) {
+    *width = app_state.width;
+    *height = app_state.height;
 }
 
-b8 application_on_event(u16 code, ptr sender, ptr listener_inst, event_context context) {
-    if (code == SYSTEM_EVENT_CODE_QUIT) {
-        state.running = false;
-        vinfo("Received quit event. Shutting down the application")
-        return true;
+b8 application_on_event(u16 code, void* sender, void* listener_inst, event_context context) {
+    switch (code) {
+        case EVENT_CODE_APPLICATION_QUIT: {
+            vinfo("EVENT_CODE_APPLICATION_QUIT recieved, shutting down.\n");
+            app_state.is_running = FALSE;
+            return TRUE;
+        }
     }
-    return false;
+
+    return FALSE;
 }
 
-b8 application_on_key(u16 code, ptr sender, ptr listener_inst, event_context context) {
-    if (code == SYSTEM_EVENT_CODE_KEY_PRESS) {
-        keys key = (keys) context.u16[0];
-        if (key == KEY_ESCAPE) {
+b8 application_on_key(u16 code, void* sender, void* listener_inst, event_context context) {
+    if (code == EVENT_CODE_KEY_PRESSED) {
+        u16 key_code = context.data.u16[0];
+        if (key_code == KEY_ESCAPE) {
+            // NOTE: Technically firing an event to itself, but there may be other listeners.
             event_context data = {};
-            event_trigger(SYSTEM_EVENT_CODE_QUIT, 0, data);
-            return true;
+            event_fire(EVENT_CODE_APPLICATION_QUIT, 0, data);
+
+            // Block anything else from processing this.
+            return TRUE;
+        } else if (key_code == KEY_A) {
+            // Example on checking for a key
+            vdebug("Explicit - A key pressed!");
         } else {
-            vinfo("Key pressed: %c", key)
+            vdebug("'%c' key pressed in window.", key_code);
         }
-    } else if (code == SYSTEM_EVENT_CODE_KEY_RELEASE) {
-        keys key = (keys) context.u16[0];
-        vinfo("Key released: %c", key)
+    } else if (code == EVENT_CODE_KEY_RELEASED) {
+        u16 key_code = context.data.u16[0];
+        if (key_code == KEY_B) {
+            // Example on checking for a key
+            vdebug("Explicit - B key released!");
+        } else {
+            vdebug("'%c' key released in window.", key_code);
+        }
     }
-    return false;
+    return FALSE;
 }
 
-b8 application_on_resized(u16 code, void *sender, void *listener_inst, event_context context) {
-    if (code == SYSTEM_EVENT_CODE_WINDOW_RESIZE) {
-        u16 width = context.u16[0];
-        u16 height = context.u16[1];
+b8 application_on_resized(u16 code, void* sender, void* listener_inst, event_context context) {
+    if (code == EVENT_CODE_RESIZED) {
+        u16 width = context.data.u16[0];
+        u16 height = context.data.u16[1];
 
         // Check if different. If so, trigger a resize event.
-        if (width != state.width || height != state.height) {
-            state.width = width;
-            state.height = height;
+        if (width != app_state.width || height != app_state.height) {
+            app_state.width = width;
+            app_state.height = height;
 
             vdebug("Window resize: %i, %i", width, height);
 
             // Handle minimization
             if (width == 0 || height == 0) {
                 vinfo("Window minimized, suspending application.");
-                state.suspended = true;
-                return true;
+                app_state.is_suspended = TRUE;
+                return TRUE;
             } else {
-                if (state.suspended) {
+                if (app_state.is_suspended) {
                     vinfo("Window restored, resuming application.");
-                    state.suspended = false;
+                    app_state.is_suspended = FALSE;
                 }
-                state.host->on_resize(state.host, width, height);
-                renderer_resized(width, height);
+                app_state.game_inst->on_resize(app_state.game_inst, width, height);
+                renderer_on_resized(width, height);
             }
         }
     }
 
     // Event purposely not handled to allow other listeners to get this.
-    return false;
+    return FALSE;
 }

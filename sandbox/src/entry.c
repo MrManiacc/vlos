@@ -1,19 +1,24 @@
-
-#include "entry.h"
 #include "app.h"
 
-b8 create_application(app_host *app) {
-  //configure our application
-  app->config.x = 800;
-  app->config.y = 400;
-  app->config.width = 800;
-  app->config.height = 600;
-  app->config.title = "Vulkan Engine";
-  app->create = app_init;
-  app->update = app_update;
-  app->render = app_render;
-  app->on_resize = app_resize;
-  // create our application state
-  app->state = mem_alloc(sizeof(app_state), MEM_TAG_APPLICATION);
-  return true;
+#include <entry.h>
+
+#include <core/mem.h>
+
+// Define the function to create a game
+b8 create_game(game* out_game) {
+    // Application configuration.
+    out_game->app_config.start_pos_x = 100;
+    out_game->app_config.start_pos_y = 100;
+    out_game->app_config.start_width = 1280;
+    out_game->app_config.start_height = 720;
+    out_game->app_config.name = "Vlos Engine Testbed";
+    out_game->update = game_update;
+    out_game->render = game_render;
+    out_game->initialize = game_initialize;
+    out_game->on_resize = game_on_resize;
+
+    // Create the game state.
+    out_game->state = kallocate(sizeof(game_state), MEMORY_TAG_GAME);
+
+    return TRUE;
 }

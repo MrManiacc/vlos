@@ -1,47 +1,46 @@
 #pragma once
 
-
 #include "core/application.h"
 #include "core/logger.h"
 #include "core/mem.h"
 #include "types.h"
 
+// Externally-defined function to create a game.
+extern b8 create_game(game* out_game);
+
 /**
- * Externally create the application. This is called once at the start of the application.
- * This is defined outside of the context of this assembly. This is defined by the user.
- *
- * @param app The application to create
- * @return Whether or not the application was successfully created
+ * The main entry point of the application.
  */
-extern b8 create_application(app_host *app);
-
 int main(void) {
-  mem_init();
-  app_host app;
-  // Create the application
-  if (!create_application(&app)) {
-    verror("Failed to create application");
-    return -1;
-  }
-  vdebug("Created the application")
-  // Check that the application has the required functions
-  if (!app.render || !app.update || !app.create) {
-    vfatal("Application is missing required functions");
-    return -2;
-  }
-  vdebug("Application has required functions")
-  //Initialize our subsystems
-  if (!application_create(&app)) {
-    vfatal("Failed to create application");
-    return 1;
-  }
-  vdebug("Initialized the application")
-  // Begin the game loop
-  if (!application_run()) {
-    vwarn("Failed to shutdown gracefully");
-    return 2;
-  }
-  mem_shutdown();
-  return 0;
-}
 
+    initialize_memory();
+
+    // Request the game instance from the application.
+    game game_inst;
+    if (!create_game(&game_inst)) {
+        vfatal("Could not create game!");
+        return -1;
+    }
+
+    // Ensure the function pointers exist.
+    if (!game_inst.render || !game_inst.update || !game_inst.initialize || !game_inst.on_resize) {
+        vfatal("The game's function pointers must be assigned!");
+        return -2;
+    }
+
+    // Initialization.
+    if (!application_create(&game_inst)) {
+        vfatal("Application failed to create!.");
+        return 1;
+    }
+
+    // Begin the game loop.
+    if(!application_run()) {
+        vinfo("Application did not shutdown gracefully.");
+        return 2;
+    }
+
+    shutdown_memory();
+
+    return 0;
+}

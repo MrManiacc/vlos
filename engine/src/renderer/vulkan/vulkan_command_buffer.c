@@ -1,17 +1,14 @@
-/**
- * Created by jraynor on 8/22/2023.
- */
 #include "vulkan_command_buffer.h"
 
 #include "core/mem.h"
 
-
 void vulkan_command_buffer_allocate(
-    vulkan_context *context,
+    vulkan_context* context,
     VkCommandPool pool,
     b8 is_primary,
-    vulkan_command_buffer *out_command_buffer) {
-    mem_zero(out_command_buffer, sizeof(out_command_buffer));
+    vulkan_command_buffer* out_command_buffer) {
+
+    kzero_memory(out_command_buffer, sizeof(out_command_buffer));
 
     VkCommandBufferAllocateInfo allocate_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     allocate_info.commandPool = pool;
@@ -19,19 +16,18 @@ void vulkan_command_buffer_allocate(
     allocate_info.commandBufferCount = 1;
     allocate_info.pNext = 0;
 
-    out_command_buffer->state = COMMAND_BUFFER_UNALLOCATED;
+    out_command_buffer->state = COMMAND_BUFFER_STATE_NOT_ALLOCATED;
     VK_CHECK(vkAllocateCommandBuffers(
         context->device.logical_device,
         &allocate_info,
         &out_command_buffer->handle));
-    out_command_buffer->state = COMMAND_BUFFER_READY;
-
+    out_command_buffer->state = COMMAND_BUFFER_STATE_READY;
 }
 
 void vulkan_command_buffer_free(
-    vulkan_context *context,
+    vulkan_context* context,
     VkCommandPool pool,
-    vulkan_command_buffer *command_buffer) {
+    vulkan_command_buffer* command_buffer) {
     vkFreeCommandBuffers(
         context->device.logical_device,
         pool,
@@ -39,15 +35,15 @@ void vulkan_command_buffer_free(
         &command_buffer->handle);
 
     command_buffer->handle = 0;
-    command_buffer->state = COMMAND_BUFFER_UNALLOCATED;
+    command_buffer->state = COMMAND_BUFFER_STATE_NOT_ALLOCATED;
 }
 
 void vulkan_command_buffer_begin(
-    vulkan_command_buffer *command_buffer,
+    vulkan_command_buffer* command_buffer,
     b8 is_single_use,
     b8 is_renderpass_continue,
     b8 is_simultaneous_use) {
-
+    
     VkCommandBufferBeginInfo begin_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
     begin_info.flags = 0;
     if (is_single_use) {
@@ -61,34 +57,34 @@ void vulkan_command_buffer_begin(
     }
 
     VK_CHECK(vkBeginCommandBuffer(command_buffer->handle, &begin_info));
-    command_buffer->state = COMMAND_BUFFER_RECORDING;
+    command_buffer->state = COMMAND_BUFFER_STATE_RECORDING;
 }
 
-void vulkan_command_buffer_end(vulkan_command_buffer *command_buffer) {
+void vulkan_command_buffer_end(vulkan_command_buffer* command_buffer) {
     VK_CHECK(vkEndCommandBuffer(command_buffer->handle));
-    command_buffer->state = COMMAND_BUFFER_RECORDING_ENDED;
+    command_buffer->state = COMMAND_BUFFER_STATE_RECORDING_ENDED;
 }
 
-void vulkan_command_buffer_update_submitted(vulkan_command_buffer *command_buffer) {
-    command_buffer->state = COMMAND_BUFFER_SUBMITTED;
+void vulkan_command_buffer_update_submitted(vulkan_command_buffer* command_buffer) {
+    command_buffer->state = COMMAND_BUFFER_STATE_SUBMITTED;
 }
 
-void vulkan_command_buffer_reset(vulkan_command_buffer *command_buffer) {
-    command_buffer->state = COMMAND_BUFFER_READY;
+void vulkan_command_buffer_reset(vulkan_command_buffer* command_buffer) {
+    command_buffer->state = COMMAND_BUFFER_STATE_READY;
 }
 
 void vulkan_command_buffer_allocate_and_begin_single_use(
-    vulkan_context *context,
+    vulkan_context* context,
     VkCommandPool pool,
-    vulkan_command_buffer *out_command_buffer) {
-    vulkan_command_buffer_allocate(context, pool, true, out_command_buffer);
-    vulkan_command_buffer_begin(out_command_buffer, true, false, false);
+    vulkan_command_buffer* out_command_buffer) {
+    vulkan_command_buffer_allocate(context, pool, TRUE, out_command_buffer);
+    vulkan_command_buffer_begin(out_command_buffer, TRUE, FALSE, FALSE);
 }
 
 void vulkan_command_buffer_end_single_use(
-    vulkan_context *context,
+    vulkan_context* context,
     VkCommandPool pool,
-    vulkan_command_buffer *command_buffer,
+    vulkan_command_buffer* command_buffer,
     VkQueue queue) {
 
     // End the command buffer.
@@ -105,4 +101,4 @@ void vulkan_command_buffer_end_single_use(
 
     // Free the command buffer.
     vulkan_command_buffer_free(context, pool, command_buffer);
-}
+ }

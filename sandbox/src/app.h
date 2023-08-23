@@ -1,16 +1,17 @@
 
 #pragma once
 
-#include "types.h"
+#include <defines.h>
+#include <types.h>
 
-typedef struct app_state {
+typedef struct game_state {
     f32 delta_time;
-} app_state;
+} game_state;
 
-b8 app_init(app_host *host);
+b8 game_initialize(game* game_inst);
 
-b8 app_update(app_host *host, f32 delta_time);
+b8 game_update(game* game_inst, f32 delta_time);
 
-b8 app_render(app_host *host, f32 delta_time);
+b8 game_render(game* game_inst, f32 delta_time);
 
-b8 app_resize(app_host *host, u16 width, u16 height);
+void game_on_resize(game* game_inst, u32 width, u32 height);

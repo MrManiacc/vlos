@@ -1,108 +1,35 @@
-//
-// Created by jwraynor on 8/21/2023.
-//
-
 #pragma once
+
 #include "defines.h"
 
 typedef struct platform_state {
-  void *internal_state;
+    void* internal_state;
 } platform_state;
 
-/**
- * Internally initializes the platform state and returns it. This is per platform and should be called
- * by the platform specific code.
- * @param state The platform state to initialize
- * @param str The title of the window
- * @param x The x position of the window
- * @param y The y position of the window
- * @param width The width of the window
- * @param height The height of the window
- * @return  Whether or not the platform was successfully initialized
- */
-VAPI b8 platform_startup(platform_state *state, conststr str, i32 x, i32 y, i32 width, i32 height);
+b8 platform_startup(
+    platform_state* plat_state,
+    const char* application_name,
+    i32 x,
+    i32 y,
+    i32 width,
+    i32 height);
 
-/**
- * Internally shuts down the platform state. This is per platform and should be called
- * by the platform specific code.
- * @param state The platform state to shut down
- */
-VAPI void platform_shutdown(platform_state *state);
+void platform_shutdown(platform_state* plat_state);
 
-/**
- * Internally polls the platform for messages. This is per platform and should be called
- * by the platform specific code.
- * @param state The platform state to poll
- * @return  Whether or not the platform was successfully initialized
- */
-VAPI b8 platform_pump_messages(platform_state *state);
+b8 platform_pump_messages(platform_state* plat_state);
 
-/**
- * Allocates memory on the platform specific heap.
- * @param size  The size of the memory to allocate
- * @param aligned  Whether or not the memory should be aligned
- * @return  The pointer to the allocated memory
- */
-void *platform_allocate(u64 size, b8 aligned);
+void* platform_allocate(u64 size, b8 aligned);
+void platform_free(void* block, b8 aligned);
+void* platform_zero_memory(void* block, u64 size);
+void* platform_copy_memory(void* dest, const void* source, u64 size);
+void* platform_set_memory(void* dest, i32 value, u64 size);
 
-/**
- * Frees memory on the platform specific heap. This should be called for every call to platform_allocate.
- * @param void* The pointer to the memory to free
- * @param aligned Whether or not the memory was aligned
- * @return  The pointer to the allocated memory
- */
-void platform_free(void *ptr, b8 aligned);
+void platform_console_write(const char* message, u8 colour);
+void platform_console_write_error(const char* message, u8 colour);
 
-/**
- * Zeroes out the memory at the given pointer for the given size.
- * @param void* The pointer to the memory to zero out
- * @param size The size of the memory to zero out
- * @return  The pointer to the memory
- */
-void *platform_zero_memory(void *ptr, u64 size);
+f64 platform_get_absolute_time();
 
-/**
- * Copies memory from src to dest for the given size. The memory should not overlap.
- * @param dest the destination pointer
- * @param src  the source pointer
- * @param size  the size of the memory to copy
- * @return  the destination pointer
- */
-void *platform_copy_memory(void *dest, const void *src, u64 size);
-
-/**
- * Sets the memory at the given pointer to the given value for the given size.
- * @param dest The pointer to the memory to set
- * @param value The value to set the memory to
- * @param size The size of the memory to set
- * @return The pointer to the memory
- */
-void *platform_set_memory(void *dest, i32 value, u64 size);
-
-
-/**
- * Writes the given string to the console with the given color to stdout
- * @param str The string to write
- * @param color The color to write the string in
- */
-VAPI void platform_console_write(conststr str, u8 color);
-
-/**
- * Writes the given string to the console with the given color to stderr
- * @param str The string to write
- * @param color The color to write the string in
- */
-VAPI void platform_console_write_error(conststr str, u8 color);
-
-/**
- * Returns the current time in milliseconds
- * @return The current time in milliseconds
- */
-f64 platform_get_time();
-
-/**
- * Sleeps the current thread for the given number of milliseconds
- * @param ms  The number of milliseconds to sleep
- */
+// Sleep on the thread for the provided ms. This blocks the main thread.
+// Should only be used for giving time back to the OS for unused update power.
+// Therefore it is not exported.
 void platform_sleep(u64 ms);
-

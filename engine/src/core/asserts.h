@@ -1,15 +1,11 @@
-//
-// Created by jwraynor on 8/21/2023.
-//
-
 #pragma once
 
 #include "defines.h"
 
 // Disable assertions by commenting out the below line.
-#define VASSERTIONS_ENABLED
+#define KASSERTIONS_ENABLED
 
-#ifdef VASSERTIONS_ENABLED
+#ifdef KASSERTIONS_ENABLED
 #if _MSC_VER
 #include <intrin.h>
 #define debugBreak() __debugbreak()
@@ -17,9 +13,9 @@
 #define debugBreak() __builtin_trap()
 #endif
 
-VAPI void report_assertion_failure(const char *expression, const char *message, const char *file, i32 line);
+VAPI void report_assertion_failure(const char* expression, const char* message, const char* file, i32 line);
 
-#define VASSERT(expr)                                                \
+#define KASSERT(expr)                                                \
     {                                                                \
         if (expr) {                                                  \
         } else {                                                     \
@@ -28,7 +24,7 @@ VAPI void report_assertion_failure(const char *expression, const char *message, 
         }                                                            \
     }
 
-#define VASSERT_MSG(expr, message)                                        \
+#define KASSERT_MSG(expr, message)                                        \
     {                                                                     \
         if (expr) {                                                       \
         } else {                                                          \
@@ -37,8 +33,8 @@ VAPI void report_assertion_failure(const char *expression, const char *message, 
         }                                                                 \
     }
 
-#ifdef DEBUG_BUILD
-#define VASSERT_DEBUG(expr)                                          \
+#ifdef _DEBUG
+#define KASSERT_DEBUG(expr)                                          \
     {                                                                \
         if (expr) {                                                  \
         } else {                                                     \
@@ -47,11 +43,11 @@ VAPI void report_assertion_failure(const char *expression, const char *message, 
         }                                                            \
     }
 #else
-#define VASSERT_DEBUG(expr)  // Does nothing at all
+#define KASSERT_DEBUG(expr)  // Does nothing at all
 #endif
 
 #else
-#define VASSERT(expr)               // Does nothing at all
-#define VASSERT_MSG(expr, message)  // Does nothing at all
-#define VASSERT_DEBUG(expr)         // Does nothing at all
+#define KASSERT(expr)               // Does nothing at all
+#define KASSERT_MSG(expr, message)  // Does nothing at all
+#define KASSERT_DEBUG(expr)         // Does nothing at all
 #endif

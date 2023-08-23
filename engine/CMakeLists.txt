@@ -54,4 +54,4 @@ target_link_libraries(engine
         ${Vulkan_LIBRARIES}
 )
 
-target_compile_definitions(engine PUBLIC -DDEBUG_BUILD)
+target_compile_definitions(engine PUBLIC -D_DEBUG)

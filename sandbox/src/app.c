@@ -1,19 +1,20 @@
 
 
 #include "app.h"
+#include "core/logger.h"
 
-b8 app_init(app_host *host) {
-  return true;
+b8 game_initialize(game* game_inst) {
+    vdebug("game_initialize() called!");
+    return TRUE;
 }
 
-b8 app_update(app_host *host, f32 delta_time) {
-  return true;
+b8 game_update(game* game_inst, f32 delta_time) {
+    return TRUE;
 }
 
-b8 app_render(app_host *host, f32 delta_time) {
-  return true;
+b8 game_render(game* game_inst, f32 delta_time) {
+    return TRUE;
 }
 
-b8 app_resize(app_host *host, u16 width, u16 height) {
-  return true;
+void game_on_resize(game* game_inst, u32 width, u32 height) {
 }

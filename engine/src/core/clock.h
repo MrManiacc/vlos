@@ -1,30 +1,17 @@
-//
-// Created by jwraynor on 8/22/2023.
-//
-
 #pragma once
-
 #include "defines.h"
 
 typedef struct clock {
     f64 start_time;
-    f64 elapsed_time;
+    f64 elapsed;
 } clock;
 
-/**
- * Updates the clock. Should be called just before checking the elapsed time.
- * @param clock The clock to update
- */
-void clock_update(clock *clock);
+// Updates the provided clock. Should be called just before checking elapsed time.
+// Has no effect on non-started clocks.
+void clock_update(clock* clock);
 
-/**
- * Starts the clock. Should be called just before the main loop.
- * @param clock The clock to start
- */
-void clock_start(clock *clock);
+// Starts the provided clock. Resets elapsed time.
+void clock_start(clock* clock);
 
-/**
- * Stops the clock. Should be called just after the main loop.
- * @param clock The clock to stop
- */
-void clock_stop(clock *clock);
+// Stops the provided clock. Does not reset elapsed time.
+void clock_stop(clock* clock);

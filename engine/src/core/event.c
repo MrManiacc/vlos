@@ -1,129 +1,125 @@
-/**
- * Created by jraynor on 8/21/2023.
- */
-#include "event.h"
-#include "mem.h"
-#include "logger.h"
+#include "core/event.h"
+
+#include "core/mem.h"
 #include "containers/darray.h"
 
 typedef struct registered_event {
-  void *listener_instance;
-  PF_EVENT_CALLBACK callback;
+    void* listener;
+    PFN_on_event callback;
 } registered_event;
 
 typedef struct event_code_entry {
-  registered_event *events;
+    registered_event* events;
 } event_code_entry;
 
-#define MAX_EVENT_CODES 16384
+// This should be more than enough codes...
+#define MAX_MESSAGE_CODES 16384
 
+// State structure.
 typedef struct event_system_state {
-  event_code_entry registered[MAX_EVENT_CODES];
+    // Lookup table for event codes.
+    event_code_entry registered[MAX_MESSAGE_CODES];
 } event_system_state;
 
-static b8 is_initialized = false;
+/**
+ * Event system internal state.
+ */
+static b8 is_initialized = FALSE;
 static event_system_state state;
 
 b8 event_initialize() {
-  if (is_initialized) {
-    verror("Event system already initialized");
-    return false;
-  }
-  mem_zero(&state, sizeof(event_system_state));
-  is_initialized = true;
+    if (is_initialized == TRUE) {
+        return FALSE;
+    }
+    is_initialized = FALSE;
+    kzero_memory(&state, sizeof(state));
 
-  return true;
+    is_initialized = TRUE;
+
+    return TRUE;
 }
 
 void event_shutdown() {
-  for (u16 i = 0; i < MAX_EVENT_CODES; i++) {
-    if (state.registered[i].events != 0) {
-      darray_destroy(state.registered[i].events);
-      state.registered[i].events = 0;
+    // Free the events arrays. And objects pointed to should be destroyed on their own.
+    for(u16 i = 0; i < MAX_MESSAGE_CODES; ++i){
+        if(state.registered[i].events != 0) {
+            darray_destroy(state.registered[i].events);
+            state.registered[i].events = 0;
+        }
     }
-  }
 }
 
-b8 event_register(u16 event_code, void *listener_instance, PF_EVENT_CALLBACK callback) {
-  if (!is_initialized) {
-    verror("Event system not initialized");
-    return false;
-  }
-  if (event_code >= MAX_EVENT_CODES) {
-    verror("Event code is out of range");
-    return false;
-  }
-
-  if (state.registered[event_code].events == 0) {
-    state.registered[event_code].events = darray_create(registered_event);
-  }
-
-  u64 registered_count = darray_length(state.registered[event_code].events);
-  for (u64 i = 0; i < registered_count; i++) {
-    if (state.registered[event_code].events[i].listener_instance == listener_instance) {
-      vwarn("Listener already registered for event code: %d", event_code);
-      return false;
+b8 event_register(u16 code, void* listener, PFN_on_event on_event) {
+    if(is_initialized == FALSE) {
+        return FALSE;
     }
-  }
 
-  registered_event event = {
-      .listener_instance = listener_instance,
-      .callback = callback
-  };
-  darray_push(state.registered[event_code].events, event);
-  return true;
+    if(state.registered[code].events == 0) {
+        state.registered[code].events = darray_create(registered_event);
+    }
+
+    u64 registered_count = darray_length(state.registered[code].events);
+    for(u64 i = 0; i < registered_count; ++i) {
+        if(state.registered[code].events[i].listener == listener) {
+            // TODO: warn
+            return FALSE;
+        }
+    }
+
+    // If at this point, no duplicate was found. Proceed with registration.
+    registered_event event;
+    event.listener = listener;
+    event.callback = on_event;
+    darray_push(state.registered[code].events, event);
+
+    return TRUE;
 }
 
-b8 event_unregister(u16 event_code, void *listener_instance) {
-  if (!is_initialized) {
-    verror("Event system not initialized");
-    return false;
-  }
-  if (event_code >= MAX_EVENT_CODES) {
-    verror("Event code is out of range");
-    return false;
-  }
-
-  if (state.registered[event_code].events == 0) {
-    vwarn("No listeners registered for event code: %d", event_code);
-    return false;
-  }
-
-  u64 registered_count = darray_length(state.registered[event_code].events);
-  for (u64 i = 0; i < registered_count; i++) {
-    if (state.registered[event_code].events[i].listener_instance == listener_instance) {
-      registered_event event;
-      darray_pop_at(state.registered[event_code].events, i, &event);
-      return true;
+b8 event_unregister(u16 code, void* listener, PFN_on_event on_event) {
+    if(is_initialized == FALSE) {
+        return FALSE;
     }
-  }
 
-  vwarn("No listeners registered for event code: %d", event_code);
-  return false;
+    // On nothing is registered for the code, boot out.
+    if(state.registered[code].events == 0) {
+        // TODO: warn
+        return FALSE;
+    }
+
+    u64 registered_count = darray_length(state.registered[code].events);
+    for(u64 i = 0; i < registered_count; ++i) {
+        registered_event e = state.registered[code].events[i];
+        if(e.listener == listener && e.callback == on_event) {
+            // Found one, remove it
+            registered_event popped_event;
+            darray_pop_at(state.registered[code].events, i, &popped_event);
+            return TRUE;
+        }
+    }
+
+    // Not found.
+    return FALSE;
 }
 
-b8 event_trigger(u16 event_code, void *sender, event_context context_data) {
-  if (!is_initialized) {
-    verror("Event system not initialized");
-    return false;
-  }
-  if (event_code >= MAX_EVENT_CODES) {
-    verror("Event code is out of range");
-    return false;
-  }
-
-  if (state.registered[event_code].events == 0) {
-//    vwarn("No listeners registered for event code: %d", event_code);
-    return false;
-  }
-
-  u64 registered_count = darray_length(state.registered[event_code].events);
-  for (u64 i = 0; i < registered_count; i++) {
-    registered_event event = state.registered[event_code].events[i];
-    if (event.callback(event_code, sender, event.listener_instance, context_data)) {
-      vwarn("Event callback returned true for event code: %d", event_code);
-      return true;
+b8 event_fire(u16 code, void* sender, event_context context) {
+    if(is_initialized == FALSE) {
+        return FALSE;
     }
-  }
-  return false;
+
+    // If nothing is registered for the code, boot out.
+    if(state.registered[code].events == 0) {
+        return FALSE;
+    }
+
+    u64 registered_count = darray_length(state.registered[code].events);
+    for(u64 i = 0; i < registered_count; ++i) {
+        registered_event e = state.registered[code].events[i];
+        if(e.callback(code, sender, e.listener, context)) {
+            // Message has been handled, do not send to other listeners.
+            return TRUE;
+        }
+    }
+
+    // Not found.
+    return FALSE;
 }

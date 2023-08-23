@@ -65,6 +65,10 @@ typedef struct vulkan_device {
    */
   VkQueue transfer_queue;
   /**
+   * Tracks our main graphics command pool
+   */
+  VkCommandPool graphics_command_pool;
+  /**
    * The index into the queue family for the graphics queue
    */
   u32 graphics_queue_index;
@@ -133,6 +137,7 @@ typedef struct vulkan_render_pass {
   u32 stencil; // The clear stencil for the renderpass
   vulkan_render_pass_state state; // The state of the renderpass
 } vulkan_render_pass;
+
 /**
  * Tracks the state of the command buffer
  */
@@ -149,17 +154,28 @@ typedef enum vulkan_command_buffer_state {
  * Internally track the command buffer state. This is used to track the state of the command buffer
  * and to ensure that we're not trying to use the command buffer in multiple places at once.
  */
-
 typedef struct vulkan_command_buffer {
   VkCommandBuffer handle; // The handle to the command buffer
+
   vulkan_command_buffer_state state; // The state of the command buffer
 } vulkan_command_buffer;
+
+typedef struct vulkan_framebuffer {
+  VkFramebuffer handle;
+  u32 attachment_count;
+  VkImageView *attachments;
+  vulkan_render_pass *renderpass;
+} vulkan_framebuffer;
+
+typedef struct vulkan_fence {
+  VkFence handle;
+  b8 is_signaled;
+} vulkan_fence;
 
 /**
  * Internally track the swapchain state.
  */
-typedef
-struct vulkan_swapchain {
+typedef struct vulkan_swapchain {
   /**
    * The type of format we're using for the swapchain image.
    */
@@ -192,7 +208,8 @@ struct vulkan_swapchain {
    * The depth attachment for the swapchain
    */
   vulkan_image depth_attachment;
-
+  // framebuffers used for on-screen rendering.
+  vulkan_framebuffer *framebuffers;
 } vulkan_swapchain;
 
 /**
@@ -246,6 +263,25 @@ typedef struct vulkan_context {
    * The main renderpass for the swapchain
    */
   vulkan_render_pass main_render_pass;
+
+  /**
+   * The command buffers for the graphics swapchain
+   *
+   * @typeof darray
+   */
+  vulkan_command_buffer *graphics_command_buffers;
+
+  // darray
+  VkSemaphore *image_available_semaphores;
+
+  // darray
+  VkSemaphore *queue_complete_semaphores;
+
+  u32 in_flight_fence_count;
+  vulkan_fence *in_flight_fences;
+
+  // Holds pointers to fences which exist and are owned elsewhere.
+  vulkan_fence **images_in_flight;
 
   /**
    * The current image index

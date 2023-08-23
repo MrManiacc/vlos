@@ -171,6 +171,11 @@ b8 application_run() {
     return true;
 }
 
+void application_get_framebuffer_size(u32* width, u32* height) {
+    *width = state.width;
+    *height = state.height;
+}
+
 b8 application_on_event(u16 code, ptr sender, ptr listener_inst, event_context context) {
     if (code == SYSTEM_EVENT_CODE_QUIT) {
         state.running = false;

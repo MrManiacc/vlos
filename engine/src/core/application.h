@@ -28,3 +28,10 @@ VAPI b8 application_create(struct app_host *host);
  * @return Whether or not the platform was successfully initialized
  */
 VAPI b8 application_run();
+
+/**
+ * Internally retrieves the framebuffer size. This is per platform and should be called by the platform specific code.
+ * @param width
+ * @param height
+ */
+void application_get_framebuffer_size(u32* width, u32* height);

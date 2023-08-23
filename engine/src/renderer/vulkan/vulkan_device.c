@@ -116,6 +116,17 @@ b8 vulkan_device_create(vulkan_context *context) {
         0,
         &context->device.transfer_queue);
     vinfo("Queues obtained.");
+
+    // Create command pool for graphics queue.
+    VkCommandPoolCreateInfo pool_create_info = {VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
+    pool_create_info.queueFamilyIndex = context->device.graphics_queue_index;
+    pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    VK_CHECK(vkCreateCommandPool(
+        context->device.logical_device,
+        &pool_create_info,
+        context->allocator,
+        &context->device.graphics_command_pool));
+    vinfo("Graphics command pool created.");
     return true;
 }
 
@@ -126,15 +137,22 @@ void vulkan_device_destroy(vulkan_context *context) {
     context->device.present_queue = 0;
     context->device.transfer_queue = 0;
 
+    // Destroy command pools
+    vdebug("[0x%x] Destroying command pools...", &context->device.graphics_command_pool);
+    vkDestroyCommandPool(
+        context->device.logical_device,
+        context->device.graphics_command_pool,
+        context->allocator);
+
     // Destroy logical device
-    vinfo("Destroying logical device...");
+    vinfo("[0x%x] Destroying logical device...", &context->device.logical_device)
     if (context->device.logical_device) {
         vkDestroyDevice(context->device.logical_device, context->allocator);
         context->device.logical_device = 0;
     }
 
     // Physical devices are not destroyed.
-    vinfo("Releasing physical device resources...");
+    vinfo("[0x%x] Releasing physical device resources...", &context->device.physical_device);
     context->device.physical_device = 0;
 
     if (context->device.swapchain_support.formats) {
@@ -497,5 +515,6 @@ b8 physical_device_meets_requirements(
         return true;
     }
     darray_destroy(requirements->device_extension_names);
+
     return false;
 }

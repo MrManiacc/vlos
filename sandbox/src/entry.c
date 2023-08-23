@@ -4,8 +4,8 @@
 
 b8 create_application(app_host *app) {
   //configure our application
-  app->config.x = 100;
-  app->config.y = 100;
+  app->config.x = 800;
+  app->config.y = 400;
   app->config.width = 800;
   app->config.height = 600;
   app->config.title = "Vulkan Engine";

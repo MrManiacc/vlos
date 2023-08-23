@@ -6,6 +6,7 @@
 #include "vulkan_swapchain.h"
 #include "vulkan_device.h"
 #include "vulkan_image.h"
+#include "containers/darray.h"
 
 void create(vulkan_context *context, u32 width, u32 height, vulkan_swapchain *swapchain);
 void destroy(vulkan_context *context, vulkan_swapchain *swapchain);
@@ -72,6 +73,9 @@ void vulkan_swapchain_present(
     } else if (result != VK_SUCCESS) {
         vfatal("Failed to present swapchain image!");
     }
+
+    // Increment (and loop) the index.
+    context->current_frame = (context->current_frame + 1) % swapchain->max_frames_in_flight;
 }
 
 void create(vulkan_context *context, u32 width, u32 height, vulkan_swapchain *swapchain) {
@@ -218,6 +222,7 @@ void create(vulkan_context *context, u32 width, u32 height, vulkan_swapchain *sw
 }
 
 void destroy(vulkan_context *context, vulkan_swapchain *swapchain) {
+    darray_destroy(swapchain->framebuffers);
     vulkan_image_destroy(context, &swapchain->depth_attachment);
 
     for (u32 i = 0; i < swapchain->image_count; ++i) {
@@ -228,5 +233,4 @@ void destroy(vulkan_context *context, vulkan_swapchain *swapchain) {
 
     mem_free(swapchain->images, sizeof(VkImage) * swapchain->image_count, MEM_TAG_RENDERER);
     mem_free(swapchain->image_views, sizeof(VkImageView) * swapchain->image_count, MEM_TAG_RENDERER);
-
 }
